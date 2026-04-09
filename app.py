@@ -1,42 +1,54 @@
-from flask import Flask, render_template
-import sqlite3
-import os
+from flask import Flask, render_template, request, jsonify
+from datetime import datetime
 
 app = Flask(__name__)
 
-# กำหนด Path ของฐานข้อมูลให้ถูกต้องสำหรับ PythonAnywhere
-# หากรันในเครื่องตัวเอง สามารถเปลี่ยนเป็น 'noodle.db' ได้ครับ
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, 'noodle.db')
-
-def get_db_connection():
-    """ฟังก์ชันเชื่อมต่อกับฐานข้อมูล SQLite"""
-    conn = sqlite3.connect(DB_PATH)
-    # ตั้งค่าให้เรียกดูข้อมูลแบบ Dictionary (Row objects) 
-    # เพื่อให้ตรงกับ index.html ที่เรียกใช้ product['name']
-    conn.row_factory = sqlite3.Row
-    return conn
+# ตัวแปรจำลองฐานข้อมูลเก็บออเดอร์ (ในอนาคตควรเปลี่ยนเป็น SQL หรือ MongoDB)
+orders_db = []
 
 @app.route('/')
 def index():
+    # แสดงหน้าเว็บหลัก
+    return render_template('index.html')
+
+@app.route('/api/order', methods=['POST'])
+def place_order():
     try:
-        conn = get_db_connection()
+        data = request.json  # รับข้อมูล JSON จาก Frontend
         
-        # ดึงข้อมูลจากตาราง products
-        # หมายเหตุ: ในไฟล์ HTML มีการเรียกใช้ product['id'], ['name'], ['price']
-        # ต้องมั่นใจว่าในตาราง products มี Column เหล่านี้อยู่
-        products = conn.execute('SELECT * FROM products').fetchall()
+        if not data or 'items' not in data:
+            return jsonify({"status": "error", "message": "ข้อมูลไม่ถูกต้อง"}), 400
+
+        # เพิ่มข้อมูลเวลาและสร้าง Order ID
+        new_order = {
+            "order_id": len(orders_db) + 1,
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "items": data['items'],
+            "total_price": data['total_price']
+        }
         
-        # ดึงข้อมูลหมวดหมู่ (ถ้ามีตาราง categories)
-        categories = conn.execute('SELECT * FROM categories').fetchall()
+        # บันทึกลง "ฐานข้อมูล"
+        orders_db.append(new_order)
         
-        conn.close()
-        
-        return render_template('index.html', products=products, categories=categories)
+        # แสดงผลใน Console ของ Server เพื่อดูข้อมูล
+        print(f"--- New Order Received! ID: {new_order['order_id']} ---")
+        for item in new_order['items']:
+            print(f"- {item['name']} ({item['detail']}) : {item['price']} ฿")
+        print(f"Total: {new_order['total_price']} ฿")
+
+        return jsonify({
+            "status": "success", 
+            "message": "ส่งรายการสั่งซื้อเรียบร้อยแล้ว!",
+            "order_id": new_order['order_id']
+        }), 200
+
     except Exception as e:
-        # แสดงข้อผิดพลาดหากเชื่อมต่อฐานข้อมูลไม่ได้
-        return f"Database Error: {e}"
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/orders/history', methods=['GET'])
+def get_history():
+    # API สำหรับเรียกดูรายการออเดอร์ทั้งหมดที่สั่งมาแล้ว
+    return jsonify(orders_db)
 
 if __name__ == '__main__':
-    # รันแอปพลิเคชัน
-    app.run(debug=True)
+    app.run(debug=True, port=5000)
