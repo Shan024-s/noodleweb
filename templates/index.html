@@ -196,14 +196,42 @@
         if(cat === 'ทั้งหมด') renderMenu(menus); else renderMenu(menus.filter(m => m.cat === cat));
     }
 
-    function confirmKitchen() {
-        alert('ส่งเข้าครัวเรียบร้อย!');
-        cart = []; updateUI(); closeDrawers();
+    // แทนที่บรรทัด 199 เป็นต้นไป
+    async function confirmKitchen() {
+        if (cart.length === 0) return alert('เลือกรายการก่อนครับ');
+
+        const orderData = {
+            items: cart,
+            total_price: cart.reduce((s, i) => s + i.price, 0)
+        };
+
+        try {
+            // ยิงข้อมูลไปที่ Python (app.py)
+            const response = await fetch('/api/order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                alert('ส่งเข้าครัวเรียบร้อย! ออเดอร์เลขที่: ' + result.order_id);
+                cart = []; 
+                updateUI();
+                closeDrawers();
+            } else {
+                alert('เกิดข้อผิดพลาด: ' + result.message);
+            }
+        } catch (error) {
+            alert('ติดต่อ Server ไม่ได้ (รัน app.py หรือยังครับ?)');
+        }
     }
 
     function closeDrawers() { document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none'); }
 
     renderMenu(menus);
+
 </script>
 </body>
 </html>
