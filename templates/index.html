@@ -1,4 +1,57 @@
-<!DOCTYPE html>
+<div class="tabs">
+    <button class="tab-btn active" onclick="filterMenu('ทั้งหมด', this)">ทั้งหมด</button>
+    {% for cat in categories %}
+    <button class="tab-btn" onclick="filterMenu('{{ cat.name }}', this)">{{ cat.name }}</button>
+    {% endfor %}
+</div>
+
+<div class="container">
+    <div class="menu-grid" id="menuDisplay"></div>
+</div>
+
+<script>
+    // ดึงข้อมูลจาก Python/SQLite ผ่าน Jinja2 Template
+    const menus = [
+        {% for p in products %}
+        { 
+            id: '{{ p.id }}', 
+            name: '{{ p.name }}', 
+            cat: '{{ p.category }}', // ตรวจสอบว่าใน DB ใช้ชื่อ Column นี้
+            price: {{ p.price }}, 
+            opt: {{ 'true' if p.has_options else 'false' }}, 
+            img: '{{ p.image_url if p.image_url else "https://via.placeholder.com/300?text=No+Image" }}' 
+        },
+        {% endfor %}
+    ];
+
+    let cart = [];
+    let activeItem = null;
+
+    // --- ฟังก์ชันอื่นๆ (renderMenu, openOption, addToCart, etc.) ใช้ของเดิมที่คุณเขียนไว้ได้เลยครับ ---
+    function renderMenu(items) {
+        const display = document.getElementById('menuDisplay');
+        display.innerHTML = items.map(item => `
+            <div class="card" onclick="openOption('${item.id}')">
+                <img src="${item.img}">
+                <div class="card-body">
+                    <div class="card-name">${item.name}</div>
+                    <div class="card-price">${item.price} ฿</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function openOption(id) {
+        activeItem = menus.find(m => m.id === id);
+        if(activeItem && activeItem.opt) {
+            document.getElementById('optTitle').innerText = activeItem.name;
+            document.getElementById('optionOverlay').style.display = 'flex';
+        } else if(activeItem) {
+            cart.push({ name: activeItem.name, price: activeItem.price, detail: 'ปกติ' });
+            updateUI();
+        }
+    }
+    <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
