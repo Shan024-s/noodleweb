@@ -1,1 +1,209 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เรือใบสั่ง - ระบบสั่งอาหารมืออาชีพ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #8b0000; --success: #28a745; --light: #f8f9fa; --dark: #333; }
+        body { font-family: 'Kanit', sans-serif; margin: 0; background: #fff; color: var(--dark); padding-bottom: 120px; }
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 1000; }
+        .tabs { display: flex; overflow-x: auto; background: white; border-bottom: 1px solid #ddd; position: sticky; top: 61px; z-index: 999; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { padding: 15px 25px; border: none; background: none; white-space: nowrap; font-weight: 600; cursor: pointer; color: #666; font-family: 'Kanit'; }
+        .tab-btn.active { color: var(--primary); border-bottom: 3px solid var(--primary); background: #fff8f8; }
+        .container { max-width: 1000px; margin: auto; padding: 15px; }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 15px; }
+        .card { border: 1px solid #eee; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.2s; background: white; }
+        .card:hover { transform: scale(1.02); border-color: var(--primary); }
+        .card img { width: 100%; height: 130px; object-fit: cover; background: #eee; }
+        .card-body { padding: 12px; }
+        .card-name { font-size: 14px; font-weight: 600; height: 40px; line-height: 1.3; overflow: hidden; }
+        .card-price { color: var(--primary); font-weight: bold; font-size: 16px; margin-top: 5px; }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: flex-end; justify-content: center; }
+        .drawer { background: white; width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 25px; box-sizing: border-box; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .option-box { margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .option-box h4 { margin: 0 0 12px 0; color: var(--primary); border-left: 4px solid var(--primary); padding-left: 10px; }
+        .opt-label { display: flex; align-items: center; justify-content: space-between; background: #f8f8f8; padding: 12px; margin-bottom: 8px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
+        .opt-label input { width: 18px; height: 18px; accent-color: var(--primary); }
+        .opt-label:has(input:checked) { background: #fff5f5; border-color: var(--primary); }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; padding: 15px 25px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 1500; }
+        .btn-main { background: var(--success); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-weight: bold; font-size: 16px; cursor: pointer; font-family: 'Kanit'; }
+        .review-item { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 15px 0; }
+        .detail-text { font-size: 12px; color: #777; display: block; line-height: 1.4; margin-top: 4px; }
+        @media (max-width: 480px) { .menu-grid { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
 
+<header><h1>เรือใบสั่ง Noodle Bar</h1></header>
+
+<div class="tabs">
+    <button class="tab-btn active" onclick="filterMenu('ทั้งหมด', this)">ทั้งหมด</button>
+    <button class="tab-btn" onclick="filterMenu('ก๋วยเตี๋ยว', this)">ก๋วยเตี๋ยว</button>
+    <button class="tab-btn" onclick="filterMenu('เครื่องเคียง', this)">เครื่องเคียง</button>
+    <button class="tab-btn" onclick="filterMenu('ขนมหวาน', this)">ขนมหวาน</button>
+    <button class="tab-btn" onclick="filterMenu('น้ำดื่ม', this)">น้ำดื่ม</button>
+</div>
+
+<div class="container">
+    <div class="menu-grid" id="menuDisplay"></div>
+</div>
+
+<div class="overlay" id="optionOverlay">
+    <div class="drawer">
+        <h3 id="optTitle" style="margin-top:0; color:var(--primary);"></h3>
+        <div class="option-box">
+            <h4>ขนาดชาม</h4>
+            <label class="opt-label"><input type="radio" name="size" value="ธรรมดา" data-price="0" checked> ธรรมดา <span>+0฿</span></label>
+            <label class="opt-label"><input type="radio" name="size" value="พิเศษ" data-price="25"> พิเศษ <span>+25฿</span></label>
+        </div>
+        <div class="option-box">
+            <h4>ความเผ็ด</h4>
+            <label class="opt-label"><input type="radio" name="spicy" value="เผ็ด" checked> เผ็ด</label>
+            <label class="opt-label"><input type="radio" name="spicy" value="ไม่เผ็ด"> ไม่เผ็ด</label>
+        </div>
+        <div class="option-box">
+            <h4>เลือกเส้น</h4>
+            <label class="opt-label"><input type="radio" name="noodle" value="เส้นเล็ก" checked> เส้นเล็ก</label>
+            <label class="opt-label"><input type="radio" name="noodle" value="มาม่า"> มาม่า</label>
+            <label class="opt-label"><input type="radio" name="noodle" value="วุ้นเส้น"> วุ้นเส้น</label>
+            <label class="opt-label"><input type="radio" name="noodle" value="บะหมี่"> บะหมี่เหลือง</label>
+            <label class="opt-label"><input type="radio" name="noodle" value="หมี่ขาว"> หมี่ขาว</label>
+        </div>
+        <div class="option-box">
+            <h4>ผัก</h4>
+            <label class="opt-label"><input type="radio" name="veggie" value="ใส่ผัก" checked> ใส่ผักปกติ</label>
+            <label class="opt-label"><input type="radio" name="veggie" value="ไม่ใส่ผัก"> ไม่ใส่ผัก</label>
+        </div>
+        <button class="btn-main" style="width:100%" onclick="addToCart()">เพิ่มลงตะกร้า</button>
+        <button onclick="closeDrawers()" style="width:100%; background:none; border:none; margin-top:12px; color:#999; cursor:pointer;">ยกเลิก</button>
+    </div>
+</div>
+
+<div class="overlay" id="reviewOverlay">
+    <div class="drawer">
+        <h3 style="margin-top:0;">ใบสรุปรายการสั่งซื้อ</h3>
+        <div id="reviewList"></div>
+        <div style="display:flex; justify-content:space-between; font-size:22px; font-weight:bold; margin-top:20px; border-top:2px solid #eee; padding-top:15px;">
+            <span>ยอดรวม:</span> <span id="reviewTotal" style="color:var(--primary);">0 ฿</span>
+        </div>
+        <button class="btn-main" style="width:100%; margin-top:20px; font-size:18px;" onclick="confirmKitchen()">ยืนยันสั่งเข้าครัว</button>
+        <button onclick="closeDrawers()" style="width:100%; background:none; border:none; margin-top:10px; color:#999; cursor:pointer;">เลือกเพิ่ม</button>
+    </div>
+</div>
+
+<div class="bottom-bar">
+    <div>
+        <div style="font-size:13px; color:#888;">สั่ง <span id="cartQty">0</span> รายการ</div>
+        <div style="font-size:22px; font-weight:bold; color:var(--primary);"><span id="cartTotal">0</span> ฿</div>
+    </div>
+    <button class="btn-main" onclick="openReview()">เช็คออเดอร์</button>
+</div>
+
+<script>
+    const menus = [
+        { id: '1', name: 'ก๋วยเตี๋ยวเรือเนื้อน้ำตก', cat: 'ก๋วยเตี๋ยว', price: 20, opt: true, img: 'https://via.placeholder.com/300/800000/FFFFFF?text=Beef' },
+        { id: '2', name: 'ก๋วยเตี๋ยวเรือหมูน้ำตก', cat: 'ก๋วยเตี๋ยว', price: 20, opt: true, img: 'https://via.placeholder.com/300/8B4513/FFFFFF?text=Pork' },
+        { id: '3', name: 'ก๋วยเตี๋ยวต้มยำหมู', cat: 'ก๋วยเตี๋ยว', price: 25, opt: true, img: 'https://via.placeholder.com/300/FF4500/FFFFFF?text=TomYum' },
+        { id: '4', name: 'กากหมูเจียว', cat: 'เครื่องเคียง', price: 20, opt: false, img: 'https://via.placeholder.com/300?text=Lard' },
+        { id: '5', name: 'เกี๊ยวกรอบ', cat: 'เครื่องเคียง', price: 12, opt: false, img: 'https://via.placeholder.com/300?text=Lard' },
+        { id: '6', name: 'แคบหมู', cat: 'เครื่องเคียง', price: 12, opt: false, img: 'https://via.placeholder.com/300?text=PorkRind' },
+        { id: '7', name: 'ขนมถ้วย (คู่)', cat: 'ขนมหวาน', price: 10, opt: false, img: 'https://via.placeholder.com/300?text=Coconut+Custard' },
+        { id: '8', name: 'บัวลอย', cat: 'ขนมหวาน', price: 25, opt: false, img: 'https://via.placeholder.com/300?text=Rice+Ball' },
+        { id: '9', name: 'ลอดช่อง', cat: 'ขนมหวาน', price: 20, opt: false, img: 'https://via.placeholder.com/300?text=Lod+Chong' },
+        { id: '10', name: 'แป๊ปซี่', cat: 'น้ำดื่ม', price: 15, opt: false, img: 'https://via.placeholder.com/300?text=Pepsi' },
+        { id: '11', name: 'สไปรท์', cat: 'น้ำดื่ม', price: 15, opt: false, img: 'https://via.placeholder.com/300?text=Sprite' },
+        { id: '12', name: 'ส้ม แฟนตา', cat: 'น้ำดื่ม', price: 15, opt: false, img: 'https://via.placeholder.com/300?text=Sprite' },
+        { id: '13', name: 'เขียว แฟนตา', cat: 'น้ำดื่ม', price: 15, opt: false, img: 'https://via.placeholder.com/300?text=Sprite' },
+        { id: '14', name: 'น้ำเปล่า', cat: 'น้ำดื่ม', price: 10, opt: false, img: 'https://via.placeholder.com/300?text=Water' },
+        { id: '15', name: 'น้ำแข็ง (แก้ว)', cat: 'น้ำดื่ม', price: 2, opt: false, img: 'https://via.placeholder.com/300?text=Ice' }
+    ];
+
+    let cart = [];
+    let activeItem = null;
+
+    function renderMenu(items) {
+        const display = document.getElementById('menuDisplay');
+        display.innerHTML = items.map(item => `
+            <div class="card" onclick="openOption('${item.id}')">
+                <img src="${item.img}">
+                <div class="card-body">
+                    <div class="card-name">${item.name}</div>
+                    <div class="card-price">${item.price} ฿</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function openOption(id) {
+        activeItem = menus.find(m => m.id === id);
+        if(activeItem.opt) {
+            document.getElementById('optTitle').innerText = activeItem.name;
+            document.getElementById('optionOverlay').style.display = 'flex';
+        } else {
+            cart.push({ name: activeItem.name, price: activeItem.price, detail: 'ปกติ' });
+            updateUI();
+        }
+    }
+
+    function addToCart() {
+        const sizeInput = document.querySelector('input[name="size"]:checked');
+        const size = sizeInput.value;
+        const addPrice = parseInt(sizeInput.getAttribute('data-price'));
+        const spicy = document.querySelector('input[name="spicy"]:checked').value;
+        const noodle = document.querySelector('input[name="noodle"]:checked').value;
+        const veggie = document.querySelector('input[name="veggie"]:checked').value;
+
+        cart.push({
+            name: `${activeItem.name} (${size})`,
+            price: activeItem.price + addPrice,
+            detail: `${spicy} / ${noodle} / ${veggie}`
+        });
+        closeDrawers();
+        updateUI();
+    }
+
+    function openReview() {
+        if(cart.length === 0) return alert('เลือกรายการก่อนครับ');
+        const list = document.getElementById('reviewList');
+        list.innerHTML = cart.map((item, index) => `
+            <div class="review-item">
+                <div><strong>${item.name}</strong><span class="detail-text">${item.detail}</span></div>
+                <div style="text-align:right"><b>${item.price} ฿</b><br><button onclick="removeItem(${index})" style="color:red; border:none; background:none; cursor:pointer;">ลบ</button></div>
+            </div>
+        `).join('');
+        document.getElementById('reviewTotal').innerText = cart.reduce((s,i)=>s+i.price,0) + " ฿";
+        document.getElementById('reviewOverlay').style.display = 'flex';
+    }
+
+    function removeItem(index) {
+        cart.splice(index, 1);
+        if(cart.length === 0) closeDrawers(); else openReview();
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('cartQty').innerText = cart.length;
+        document.getElementById('cartTotal').innerText = cart.reduce((s,i)=>s+i.price,0).toLocaleString();
+    }
+
+    function filterMenu(cat, btn) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if(cat === 'ทั้งหมด') renderMenu(menus); else renderMenu(menus.filter(m => m.cat === cat));
+    }
+
+    function confirmKitchen() {
+        alert('ส่งเข้าครัวเรียบร้อย!');
+        cart = []; updateUI(); closeDrawers();
+    }
+
+    function closeDrawers() { document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none'); }
+
+    renderMenu(menus);
+</script>
+</body>
+</html>
