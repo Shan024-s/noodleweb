@@ -1,4 +1,15 @@
-    <!DOCTYPE html>
+// ลองแก้ใน index.html ชั่วคราว
+const menus = [
+    {% for p in products %}
+    { 
+        id: '{{ p.id }}', 
+        name: '{{ p.name }}', 
+        price: {{ p.price }},
+        img: 'https://via.placeholder.com/150'
+    },
+    {% endfor %}
+];
+<!-- <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -206,4 +217,4 @@
     renderMenu(menus);
 </script>
 </body>
-</html>
+</html> -->
