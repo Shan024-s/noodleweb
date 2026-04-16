@@ -3,23 +3,20 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# ตัวแปรจำลองฐานข้อมูลเก็บออเดอร์ (ในอนาคตควรเปลี่ยนเป็น SQL หรือ MongoDB)
 orders_db = []
 
 @app.route('/')
 def index():
-    # แสดงหน้าเว็บหลัก
     return render_template('index.html')
 
 @app.route('/api/order', methods=['POST'])
 def place_order():
     try:
-        data = request.json  # รับข้อมูล JSON จาก Frontend
+        data = request.json  
         
         if not data or 'items' not in data:
             return jsonify({"status": "error", "message": "ข้อมูลไม่ถูกต้อง"}), 400
 
-        # เพิ่มข้อมูลเวลาและสร้าง Order ID
         new_order = {
             "order_id": len(orders_db) + 1,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -27,10 +24,8 @@ def place_order():
             "total_price": data['total_price']
         }
         
-        # บันทึกลง "ฐานข้อมูล"
         orders_db.append(new_order)
         
-        # แสดงผลใน Console ของ Server เพื่อดูข้อมูล
         print(f"--- New Order Received! ID: {new_order['order_id']} ---")
         for item in new_order['items']:
             print(f"- {item['name']} ({item['detail']}) : {item['price']} ฿")
@@ -45,10 +40,9 @@ def place_order():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/api/orders/history', methods=['GET'])
-def get_history():
-    # API สำหรับเรียกดูรายการออเดอร์ทั้งหมดที่สั่งมาแล้ว
-    return jsonify(orders_db)
+# @app.route('/api/orders/history', methods=['GET'])
+# def get_history():
+#     return jsonify(orders_db)
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+# if __name__ == '__main__':
+#     app.run(debug=True, port=5000)
